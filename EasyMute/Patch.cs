@@ -14,7 +14,7 @@ public class Patch : ResoniteMod
     public override string Author => "LeCloutPanda";
     public override string Version => "1.0.0-a";
 
-    [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Global toggle for the mod.", () => false);
+    [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Global toggle for the mod.", () => true);
     private static ModConfiguration config;
 
     public override void OnEngineInit()
