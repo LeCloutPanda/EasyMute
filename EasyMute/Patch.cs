@@ -1,10 +1,12 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.UIX;
 using HarmonyLib;
 using ResoniteModLoader;
+using static FrooxEngine.InteractionHandler;
 
 namespace EasyMute;
 
@@ -12,10 +14,15 @@ public class Patch : ResoniteMod
 {
     public override string Name => "Easy Mute";
     public override string Author => "LeCloutPanda";
-    public override string Version => "1.0.0-a";
+    public override string Version => "1.0.0";
 
     [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Global toggle for the mod.", () => true);
+    [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> DISABLE_TOUCH = new ModConfigurationKey<bool>("Disable when holding a reference", "Whilst holding a reference disable the button.", () => true);
+    [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> DISABLE_WHILST_OPENING = new ModConfigurationKey<bool>("Disable center button whilst menu is opening", "Disable center button whilst opening menu.", () => true);
+    [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> REQUIRE_INITIAL_PRESS = new ModConfigurationKey<bool>("Require repress of center to toggle mute, useful to prevent accidental triggers when opening submenus", "When holding primary and opening a menu/changing menues it triggers the center button so this just prevents it from activating when opening/chaning menues", () => true);
     private static ModConfiguration config;
+    private static bool lockVoiceModeChanges = false;
+    private static VoiceMode lastVoiceMode = VoiceMode.Mute;
 
     public override void OnEngineInit()
     {
@@ -35,6 +42,9 @@ public class Patch : ResoniteMod
                 if (!config.GetValue(ENABLED)) return;
                 if (__instance.World.IsUserspace()) return;
                 if (__instance.Slot.ActiveUser != __instance.World.LocalUser) return;
+            
+                ____innerCircleButton.Target.RequireInitialPress.Value = config.GetValue(REQUIRE_INITIAL_PRESS);
+
                 __instance.LocalUserRoot.RunInUpdates(3, () =>
                 {
                     ____innerCircleButton.Target.Pressed.Clear();
@@ -53,12 +63,44 @@ public class Patch : ResoniteMod
         }
         
         [HarmonyPostfix]
+        [HarmonyPatch(typeof(ContextMenu), "OnChanges")]
+        private static void OnChangesPostfix(ContextMenu __instance, SyncRef<Button> ____innerCircleButton) 
+        {
+            if (!config.GetValue(ENABLED)) return;
+            if (!config.GetValue(DISABLE_WHILST_OPENING)) return;
+            if (__instance.World.IsUserspace()) return;
+            if (__instance.Slot.ActiveUser != __instance.World.LocalUser) return;
+            if (__instance.MenuState != ContextMenu.State.Opened)
+            {   
+                if (____innerCircleButton.Target.Enabled != false) ____innerCircleButton.Target.Enabled = false;
+                return;
+            }
+            else if (____innerCircleButton.Target.Enabled != true) ____innerCircleButton.Target.Enabled = true;
+        }
+
+        [HarmonyPostfix]
         [HarmonyPatch(typeof(ContextMenu), "OpenMenu")]
-        private static void OpenMenuPostfix(ContextMenu __instance, SyncRef<Button> ____innerCircleButton, SyncRef<Image> ____iconImage) 
+        private static void OpenMenuPostfix(ContextMenu __instance, IWorldElement summoner, SyncRef<Button> ____innerCircleButton, SyncRef<Image> ____iconImage) 
         {
             if (!config.GetValue(ENABLED)) return;
             if (__instance.World.IsUserspace()) return;
             if (__instance.Slot.ActiveUser != __instance.World.LocalUser) return;
+
+            ____innerCircleButton.Target.RequireInitialPress.Value = config.GetValue(REQUIRE_INITIAL_PRESS);
+
+            if (summoner.GetType() == typeof(InteractionHandler)) {
+                InteractionHandler interactionHandler = (InteractionHandler) summoner;
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
+                var currentGrabTypeField = interactionHandler.GetType().GetField("_currentGrabType", flags);
+                if (currentGrabTypeField == null)
+                    throw new Exception("Field _currentGrabType not found");
+
+                var currentGrabType = (Sync<GrabType>) currentGrabTypeField.GetValue(interactionHandler);
+                if (config.GetValue(DISABLE_TOUCH) && currentGrabType == GrabType.Touch) ____innerCircleButton.Target.Enabled = false;
+                else ____innerCircleButton.Target.Enabled = true;
+            } else ____innerCircleButton.Target.Enabled = true;
+
             UpdateCenterIcon(__instance, ____innerCircleButton, ____iconImage);
         }
 
@@ -95,9 +137,6 @@ public class Patch : ResoniteMod
         {
             lockVoiceModeChanges = true;
         }
-
-        private static bool lockVoiceModeChanges = false;
-        private static VoiceMode lastVoiceMode = VoiceMode.Mute;
         
         [HarmonyPostfix]
         [HarmonyPatch(typeof(User), nameof(User.VoiceMode), MethodType.Setter)]
