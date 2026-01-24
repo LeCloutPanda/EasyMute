@@ -18,10 +18,10 @@ public class Patch : ResoniteMod
 
     [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Global toggle for the mod.", () => true);
     [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> DISABLE_TOUCH = new ModConfigurationKey<bool>("Disable when holding a reference", "Whilst holding a reference disable the button.", () => true);
-    [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> DISABLE_WHILST_OPENING = new ModConfigurationKey<bool>("Disable center button whilst menu is opening", "Disable center button whilst opening menu.", () => true);
-    [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> REQUIRE_INITIAL_PRESS = new ModConfigurationKey<bool>("Require repress of center to toggle mute, useful to prevent accidental triggers when opening submenus", "When holding primary and opening a menu/changing menues it triggers the center button so this just prevents it from activating when opening/chaning menues", () => true);
+    [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> DISABLE_WHILST_OPENING = new ModConfigurationKey<bool>("Require initial press of centre to toggle mute", "When holding primary and opening a menu/changing menus it triggers the centre button so this just prevents it from activating when opening/chaning menus", () => true);
     private static ModConfiguration config;
     private static bool lockVoiceModeChanges = false;
+    private static bool shouldDisableMenu = false;
     private static VoiceMode lastVoiceMode = VoiceMode.Mute;
 
     public override void OnEngineInit()
@@ -43,8 +43,6 @@ public class Patch : ResoniteMod
                 if (__instance.World.IsUserspace()) return;
                 if (__instance.Slot.ActiveUser != __instance.World.LocalUser) return;
             
-                ____innerCircleButton.Target.RequireInitialPress.Value = config.GetValue(REQUIRE_INITIAL_PRESS);
-
                 __instance.LocalUserRoot.RunInUpdates(3, () =>
                 {
                     ____innerCircleButton.Target.Pressed.Clear();
@@ -52,7 +50,7 @@ public class Patch : ResoniteMod
                     
                     ____innerCircleButton.Target.LocalPressed += (IButton button, ButtonEventData data) => {
                         __instance.AudioSystem.IsMuted = !__instance.AudioSystem.IsMuted;
-                        __instance.RunInUpdates(3, () => { UpdateCenterIcon(__instance, ____innerCircleButton, ____iconImage); });
+                        __instance.RunInUpdates(3, () => { UpdateCentreIcon(__instance, ____innerCircleButton, ____iconImage); });
                     };   
                 });
             }
@@ -67,15 +65,14 @@ public class Patch : ResoniteMod
         private static void OnChangesPostfix(ContextMenu __instance, SyncRef<Button> ____innerCircleButton) 
         {
             if (!config.GetValue(ENABLED)) return;
-            if (!config.GetValue(DISABLE_WHILST_OPENING)) return;
             if (__instance.World.IsUserspace()) return;
             if (__instance.Slot.ActiveUser != __instance.World.LocalUser) return;
-            if (__instance.MenuState != ContextMenu.State.Opened)
-            {   
-                if (____innerCircleButton.Target.Enabled != false) ____innerCircleButton.Target.Enabled = false;
-                return;
-            }
-            else if (____innerCircleButton.Target.Enabled != true) ____innerCircleButton.Target.Enabled = true;
+
+            if (config.GetValue(DISABLE_WHILST_OPENING))
+            {
+                if (__instance.MenuState == ContextMenu.State.Opened) ____innerCircleButton.Target.Enabled = !shouldDisableMenu; 
+                else ____innerCircleButton.Target.Enabled = false; 
+            } else ____innerCircleButton.Target.Enabled = !shouldDisableMenu; 
         }
 
         [HarmonyPostfix]
@@ -86,7 +83,7 @@ public class Patch : ResoniteMod
             if (__instance.World.IsUserspace()) return;
             if (__instance.Slot.ActiveUser != __instance.World.LocalUser) return;
 
-            ____innerCircleButton.Target.RequireInitialPress.Value = config.GetValue(REQUIRE_INITIAL_PRESS);
+            ____innerCircleButton.Target.RequireInitialPress.Value = config.GetValue(DISABLE_WHILST_OPENING);
 
             if (summoner.GetType() == typeof(InteractionHandler)) {
                 InteractionHandler interactionHandler = (InteractionHandler) summoner;
@@ -97,11 +94,12 @@ public class Patch : ResoniteMod
                     throw new Exception("Field _currentGrabType not found");
 
                 var currentGrabType = (Sync<GrabType>) currentGrabTypeField.GetValue(interactionHandler);
-                if (config.GetValue(DISABLE_TOUCH) && currentGrabType == GrabType.Touch) ____innerCircleButton.Target.Enabled = false;
-                else ____innerCircleButton.Target.Enabled = true;
-            } else ____innerCircleButton.Target.Enabled = true;
+                if (config.GetValue(DISABLE_TOUCH) && currentGrabType == GrabType.Touch) shouldDisableMenu = true; 
+                else shouldDisableMenu = false; 
+            } 
+            else shouldDisableMenu = false;
 
-            UpdateCenterIcon(__instance, ____innerCircleButton, ____iconImage);
+            UpdateCentreIcon(__instance, ____innerCircleButton, ____iconImage);
         }
 
         [HarmonyPrefix]
@@ -117,7 +115,7 @@ public class Patch : ResoniteMod
                 if (____selectedItem.Target == item)
                 {
                     ____selectedItem.Target = null;
-                    UpdateCenterIcon(__instance, ____innerCircleButton, ____iconImage);
+                    UpdateCentreIcon(__instance, ____innerCircleButton, ____iconImage);
                 }
                 lockVoiceModeChanges = false;
                 return false;
@@ -164,7 +162,7 @@ public class Patch : ResoniteMod
                     throw new Exception("Field _iconImage not found");
                 var iconImage = (SyncRef<Image>)iconImageField.GetValue(contextMenu);
                     
-                UpdateCenterIcon(contextMenu, innerCircleButton, iconImage);
+                UpdateCentreIcon(contextMenu, innerCircleButton, iconImage);
             } 
             catch(Exception ex) 
             {
@@ -172,7 +170,7 @@ public class Patch : ResoniteMod
             }
         }
         
-        private static void UpdateCenterIcon(ContextMenu __instance, SyncRef<Button> ____innerCircleButton, SyncRef<Image> ____iconImage)
+        private static void UpdateCentreIcon(ContextMenu __instance, SyncRef<Button> ____innerCircleButton, SyncRef<Image> ____iconImage)
         {
             SpriteProvider sprite = ____iconImage.Target.Slot.GetComponentOrAttach<SpriteProvider>();
             StaticTexture2D staticTexture2D = ____iconImage.Target.Slot.GetComponentOrAttach<StaticTexture2D>();
