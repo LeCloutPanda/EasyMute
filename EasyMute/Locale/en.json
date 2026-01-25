@@ -1,0 +1,17 @@
+{
+  "localeCode": "en-US",
+  "authors": [ "LeCloutPanda" ],
+  "messages": {
+    "Settings.dev.lecloutpanda.easymute": "Easy Mute",
+    "Settings.dev.lecloutpanda.contactsorter.Breadcrumb": "Easy Mute",
+    
+    "Settings.dev.lecloutpanda.contactsorter.Toggles.Enabled": "Enabled",
+    "Settings.dev.lecloutpanda.contactsorter.Toggles.Enabled.Description": "Enable/Disable the mod.",
+
+    "Settings.dev.lecloutpanda.contactsorter.Toggles.DisableTouch": "Disable when holding a reference",
+    "Settings.dev.lecloutpanda.contactsorter.Toggles.DisableTouch.Description": "Whilst holding a reference disable the center button.",
+
+    "Settings.dev.lecloutpanda.contactsorter.Toggles.DisableWhilstOpening": "Disable whilst opening menu",
+    "Settings.dev.lecloutpanda.contactsorter.Toggles.DisableWhilstOpening.Description": "Disable the center menu button whilst opening the context menu and require pressing the primary again to toggle mute."
+  }
+}

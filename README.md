@@ -1,10 +1,11 @@
+[![Thunderstore Badge](https://modding.resonite.net/assets/available-on-thunderstore.svg)](https://thunderstore.io/c/resonite/)
+
 # EasyMute
-[ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader) mod for [Resonite](https://resonite.com/) that replaces the center functionality of the context menu with a quick mute button.
+A [Resonite](https://resonite.com/) that replaces the center functionality of the context menu with a quick mute button.
 
-# Installation
-1. Install [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader).
-2. Place [EasyMute.dll](https://github.com/LeCloutPanda/EasyMute/releases/latest/download/EasyMute.dll) into your `rml_mods` folder. This folder should be at `C:\Program Files (x86)\Steam\steamapps\common\Resonite\rml_mods` for a default install. You can create it if it's missing, or if you launch the game once with ResoniteModLoader installed it will create the folder for you.
-3. Start the game. If you want to verify that the mod is working you can check your Resonite logs. 
-
-# Known bugs
-- When a context menu item doesn't have an icon and is hovered over then no longer hovered the icon for the voice mode doesn't update
+## Installation (Manual)
+1. Install [BepisLoader](https://github.com/ResoniteModding/BepisLoader) for Resonite.
+2. Download the latest release ZIP file (e.g., `LeCloutPanda-EasyMute-1.0.0.zip`) from the [Releases](https://github.com/LeCloutPanda/EasyMute/releases) page.
+3. Extract the ZIP and copy the `plugins` folder to your BepInEx folder in your Resonite installation directory:
+   - **Default location:** `C:\Program Files (x86)\Steam\steamapps\common\Resonite\BepInEx\`
+4. Start the game. If you want to verify that the mod is working you can check your BepInEx logs.

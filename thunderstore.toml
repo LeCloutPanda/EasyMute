@@ -1,0 +1,35 @@
+[config]
+schemaVersion = "0.0.1"
+
+[package]
+namespace = "LeCloutPanda"
+name = "EasyMute"
+versionNumber = "1.0.0" 
+description = "Replace the center button on the context menu with a easy to access mute toggle" 
+websiteUrl = "https://github.com/LeCloutPanda/EasyMute"
+containsNsfwContent = false
+
+[package.dependencies] 
+ResoniteModding-BepisLoader = "1.5.1"
+
+[build]
+icon = "./icon.png"
+readme = "./README.md"
+outdir = "./build"
+
+[[build.copy]]
+source = "./bin/Release/EasyMute.dll"
+target = "plugins/EasyMute/"
+
+[[build.copy]]
+source = "./bin/Release/EasyMute.pdb"
+target = "plugins/EasyMute/"
+
+[[build.copy]]
+source = "./LICENSE"
+target = "/"
+
+[publish]
+repository = "https://thunderstore.io"
+communities = ["resonite"]
+categories = []
